@@ -1,0 +1,79 @@
+global class DailyVisitPlannerController {
+ 
+    @AuraEnabled
+    public static List<Planned_Visits__c> getAllPlvisits(){
+        system.debug('gh'+ UserInfo.getName());
+        
+        
+        list<Planned_Visits__c> plan = [ SELECT Subject_Line__c, Status__c, Start__c,Action_Item__c,Due_Date__c,  OwnerId,
+                                        Others__c, Name, Minutes_of_Meeting_MOM__c, Id, End__c, CreatedDate, Contact__c,
+                                        Checkout_Time__c, Checkout_Location__Latitude__s, Checkout_Location__Longitude__s,
+                                        CheckOut__c, CheckIn__c, CheckIn_Time__c, CheckIn_Location__Longitude__s,
+                                        CheckIn_Location__Latitude__s, Account__c,Account__r.Name,  Account_Location__Longitude__s, 
+                                        Account_Location__Latitude__s,
+                                        Start_Date__c,CreatedBy.Name,Visited_Duration_HH_MM__c FROM Planned_Visits__c
+                                         where Start_Date__c=:system.today() AND Status__c='Approved' AND OwnerId=:UserInfo.getUserId()];
+       
+        return plan;
+       
+        
+        
+    }
+    
+  
+   @AuraEnabled
+    public static list<Planned_Visits__c> getdate(date dt){
+    
+        list<Planned_Visits__c> plan = [ SELECT Subject_Line__c, Status__c, Start__c, Action_Item__c, OwnerId,Due_Date__c,
+                                        Others__c, Name, Minutes_of_Meeting_MOM__c, Id, End__c, CreatedDate, Contact__c,
+                                        Checkout_Time__c, Checkout_Location__Latitude__s, Checkout_Location__Longitude__s,
+                                        CheckOut__c, CheckIn__c, CheckIn_Time__c, CheckIn_Location__Longitude__s,
+                                        CheckIn_Location__Latitude__s, Account__c,Account__r.Name,  Account_Location__Longitude__s, 
+                                        Account_Location__Latitude__s,
+                                        Start_Date__c,CreatedBy.Name,Visited_Duration_HH_MM__c FROM Planned_Visits__c where Start_Date__c=:dt AND 
+                                        Status__c='Approved' AND OwnerId=:UserInfo.getUserId()];
+    
+        return plan;
+    }
+    @AuraEnabled
+  public static void updateCheckIn(Planned_Visits__c pvt) {
+      pvt.CheckIn__c=true;
+      pvt.CheckIn_Time__c=System.now() ;
+      update pvt;
+    
+      
+  /*Planned_Visits__c   visit = [select id,Name,CheckIn__c,CheckIn_Time__c,Minutes_of_Meeting_MOM__c,Checkin_Location__Latitude__s,Checkin_Location__Longitude__s 
+                                   from Planned_Visits__c where Id =:recid];
+       
+        
+        visit.CheckIn__c=true;
+        visit.CheckIn_Time__c = System.now() ;
+        visit.Checkin_Location__Latitude__s = lati;
+        visit.Checkin_Location__Longitude__s = longi;
+        Update visit;*/
+       
+    }
+    @AuraEnabled
+    global static void updateCheckout(Planned_Visits__c pvt) {
+        pvt.CheckOut__c=true;
+        pvt.Checkout_Time__c=System.now() ;
+        update pvt;
+     
+       
+        
+      /*  Messaging.CustomNotification notification = new Messaging.CustomNotification();
+notification.setBody('Minutes Of Meeting:'+visit.Minutes_of_Meeting_MOM__c);
+notification.setTitle(visit.Name+'Has been completed on '+visit.Checkout_Time__c);
+//notification.setSenderId(u.Id);
+CustomNotificationType type = [SELECT Id,DeveloperName FROM CustomNotificationType WHERE DeveloperName = 'Approved_Response_Notification'];
+notification.setNotificationTypeId(type.id);
+notification.setTargetId(visit.Id); // target object id
+notification.send(new Set<String> { u.ManagerId });
+
+        
+            
+       
+        System.debug('visit==='+visit);
+      */
+    }
+}
