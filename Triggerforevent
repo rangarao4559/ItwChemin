@@ -1,0 +1,54 @@
+trigger PlVisittrigger on Event (After insert) {
+   
+    
+    set<Id> eids= new set<Id> ();
+    list<event> etlist=[select Id,StartDateTime,EndDateTime,Subject,Account__c,Others__c,Account__r.Name,Account__r.Geolocation__Latitude__s,
+                        Account__r.Geolocation__Longitude__s from Event where Id=:trigger.new];
+    list<Planned_Visits__c> pvisits=new list<Planned_Visits__c>();
+    for(event e:etlist){       
+        eids.add(e.Id);
+        Planned_Visits__c pvt=new Planned_Visits__c();
+        pvt.Account__c=e.Account__c;
+        pvt.Account_Location__Latitude__s=e.Account__r.Geolocation__Latitude__s; 
+        pvt.Account_Location__Longitude__s=e.Account__r.Geolocation__Longitude__s;
+        pvt.CheckIn_Location__Latitude__s=0;
+        pvt.CheckIn_Location__Longitude__s=0;
+        pvt.Checkout_Location__Latitude__s=0;
+        pvt.Checkout_Location__Longitude__s=0;          
+        pvt.End__c=e.EndDateTime;
+        pvt.Start__c=e.StartDateTime;
+        pvt.EventId__c=e.Id;       
+        pvt.Others__c=e.Others__c;
+        pvt.Subject_Line__c=e.Subject;
+        if(e.Account__c!=null ){
+        pvt.Name=e.Subject+' With '+e.Account__r.Name;
+    }else{
+         pvt.Name=e.Subject+' With '+e.Others__c;
+    }
+        pvisits.add(pvt);        
+    }    
+    insert pvisits;
+    system.debug('eids'+eids.size());
+    list<EventRelation> erlist=[SELECT EventId,RelationId FROM EventRelation where EventId=:eids];
+    //list<Planned_Visits__c> plv=[select id,EventId__c from Planned_Visits__c where EventId__c=:eids];
+  //  system.debug('plv'+plv.size());
+    system.debug('erlist'+erlist.size());
+    if(erlist.size()>0){
+        map<string,id> plvmap=new map<string,Id> ();
+        for(Planned_Visits__c p: pvisits){
+            plvmap.put(p.EventId__c, p.Id);
+        }
+        list<Visit_Members__c> vmlist=new list<Visit_Members__c>();
+        for(EventRelation er:erlist){
+            
+            if(plvmap.containsKey(er.EventId)){
+                Visit_Members__c vm=new Visit_Members__c();
+                vm.User__c=er.RelationId;
+                vm.Planned_Visits__c=plvmap.get(er.EventId);
+                vmlist.add(vm);
+            }
+        }
+        insert vmlist;
+    }
+    
+}
