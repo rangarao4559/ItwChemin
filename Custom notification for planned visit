@@ -1,0 +1,29 @@
+trigger customNotify on Planned_Visits__c (After Update) {
+   
+   
+  set<Id> vmids=new set<Id>();
+     for(Planned_Visits__c pl :trigger.new){
+          if(trigger.oldMap.get(pl.id).Status__c =='Sent For Approval' &&( pl.Status__c == 'Approved' || pl.Status__c=='Rejected')){
+             vmids.add(pl.Id);
+        
+          } 
+     }
+    list<Visit_Members__c> vmlist=[select Id,User__c,Planned_Visits__c,Planned_Visits__r.Id,Planned_Visits__r.Name,Planned_Visits__r.Status__c from Visit_Members__c where Planned_Visits__c=:vmids];
+ 
+    
+    for(Visit_Members__c vmc:vmlist){
+          Messaging.CustomNotification notification = new Messaging.CustomNotification();
+notification.setBody(vmc.Planned_Visits__r.Name+ ' has been '+vmc.Planned_Visits__r.Status__c);
+notification.setTitle('Planned Visit Information');
+//notification.setSenderId(u.Id);
+CustomNotificationType type = [SELECT Id,DeveloperName FROM CustomNotificationType WHERE DeveloperName = 'Planned_Visit_Notify_For_All_Users'];
+notification.setNotificationTypeId(type.id);
+notification.setTargetId(vmc.Planned_Visits__c); // target object id
+        //Set<String> addressee = new Set<String>();
+//addressee.add(vmc.User__c);
+notification.send(new Set<String> { vmc.User__c });
+        
+    }
+    
+
+}
