@@ -1,0 +1,515 @@
+public class Triggerhandler {
+    /*Invoice Product trigger*/
+   public static void invoiceproduct(list<Invoice_Products__c>invnewlist,list<Invoice_Products__c>involdlist,map<Id,Invoice_Products__c>oldmapdata ){
+         set<Id> Invids=new set<Id> ();
+    set<Id> ownerids=new set<Id>();
+   // set<id> invprodids=new set<id>();
+    list<date> invdate=new list<date>();
+     if ( Trigger.IsAfter && Trigger.isInsert) {
+     for(Invoice_Products__c ip:invnewlist){
+        invids.add(ip.Invoice__c);  
+       // invprodids.add(ip.Id);
+    }   
+    list<Invoice__c> invlist=[SELECT Id, Name,OwnerId, CreatedDate, CreatedById, Invoice_Date__c, Business_Type__c FROM Invoice__c where Id=:invids];
+    for(Invoice__c iv:invlist){
+        ownerids.add(iv.ownerId);
+        invdate.add(iv.Invoice_Date__c);
+    }
+    system.debug('invlist'+invlist.size());
+    list<Target_Assignment__c> talist=[SELECT Target_Start_Date__c, Target_End_Date__c, January_Target__c, Id, OwnerId,
+                                       Name FROM Target_Assignment__c where OwnerId=:ownerids and 
+                                       Target_Start_Date__c<=:invdate and Target_End_Date__c >= :invdate];
+    system.debug('talist'+talist.size());
+    set<id> taids=new set<id>();
+    for(Target_Assignment__c tac:talist){
+        taids.add(tac.Id);  
+    }
+    list<SBU_Product__c> sbulist=[SELECT Id, Name, SBU__c, Business_Type__c, Target__c, Target_Assignment__c,Target_Assignment__r.ownerid,
+                                  January_Target__c, January_Actual__c, Actual__c, March_Target__c, February_Target__c,
+                                  April_Target__c, February_Actual__c, April_Actual__c, March_Actual__c, June_Target__c,
+                                  May_Target__c, May_Actual__c, June_Actual__c, July_Target__c, July_Actual__c, 
+                                  August_Target__c, August_Actual__c, September_Target__c, September_Actual__c, 
+                                  October_Target__c, October_Actual__c, November_Target__c, December_Actual__c,
+                                  December_Target__c, November_Actual__c, Pending__c,Target_Assignment__r.Target_Start_Date__c,
+                                  Target_Assignment__r.Target_End_Date__c,Target_OwnerId__c FROM SBU_Product__c where 
+                                  Target_Assignment__c=:taids];
+    system.debug('SBU_Product__c'+sbulist.size());
+    map<string,SBU_Product__c> sbumap=new map<string,SBU_Product__c>();
+    for(SBU_Product__c sbp:sbulist){
+        string key1=sbp.Target_OwnerId__c+':'+sbp.SBU__c+':'+sbp.Business_Type__c;
+        sbumap.put(key1, sbp);        
+    }  
+   // list<Invoice_Products__c> invplist=[SELECT Id, Name, Invoice__c,Invoice__r.ownerid,Invoice__r.Invoice_Date__c, Product__c,Business_Type__c,SBU__c,
+                                   //     Price__c FROM Invoice_Products__c where id=:invprodids];
+    
+  //  system.debug('invplist'+invplist);
+    list<SBU_Product__c> ipdata=new list<SBU_Product__c>();
+    for(Invoice_Products__c inp:invnewlist){
+        if(sbumap.containsKey(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c)){
+            Integer month = inp.Invoice_Date__c.Month();
+            system.debug('month'+month);
+            If(month==1){
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==2){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==3){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==4){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==5){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==6){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==7){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==8){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==9){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==10){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==11){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==12){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c+inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }           
+        }       
+    } 
+ 
+  //  update ipdata; 
+  map<id,SBU_Product__c> accmap = new map<id,SBU_Product__c>();
+
+//put all the values from the list to map. 
+accmap.putall(ipdata);
+if(accmap.size()>0){
+update accmap.values();
+}
+}
+    
+    
+    
+    
+    
+    
+    
+    
+     if ( Trigger.IsAfter && Trigger.isDelete) {
+    for(Invoice_Products__c ip:involdlist){      
+        invids.add(ip.Invoice__c);  
+       // invprodids.add(ip.Id);
+    } 
+         
+    list<Invoice__c> invlist=[SELECT Id, Name,OwnerId, CreatedDate, CreatedById, Invoice_Date__c, Business_Type__c FROM Invoice__c where Id=:invids];
+  
+        for(Invoice__c iv:invlist){
+        ownerids.add(iv.ownerId);
+        invdate.add(iv.Invoice_Date__c);
+    }
+    system.debug('invlist'+invlist.size());
+    list<Target_Assignment__c> talist=[SELECT Target_Start_Date__c, Target_End_Date__c, January_Target__c, Id, OwnerId,
+                                       Name FROM Target_Assignment__c where OwnerId=:ownerids and 
+                                       Target_Start_Date__c<=:invdate and Target_End_Date__c >= :invdate];
+    system.debug('talist'+talist.size());
+    set<id> taids=new set<id>();
+    for(Target_Assignment__c tac:talist){
+        taids.add(tac.Id);  
+    }
+    list<SBU_Product__c> sbulist=[SELECT Id, Name, SBU__c, Business_Type__c, Target__c, Target_Assignment__c,Target_Assignment__r.ownerid,
+                                  January_Target__c, January_Actual__c, Actual__c, March_Target__c, February_Target__c,
+                                  April_Target__c, February_Actual__c, April_Actual__c, March_Actual__c, June_Target__c,
+                                  May_Target__c, May_Actual__c, June_Actual__c, July_Target__c, July_Actual__c, 
+                                  August_Target__c, August_Actual__c, September_Target__c, September_Actual__c, 
+                                  October_Target__c, October_Actual__c, November_Target__c, December_Actual__c,
+                                  December_Target__c, November_Actual__c, Pending__c,Target_Assignment__r.Target_Start_Date__c,
+                                  Target_Assignment__r.Target_End_Date__c,Target_OwnerId__c FROM SBU_Product__c where 
+                                  Target_Assignment__c=:taids];
+    system.debug('SBU_Product__c'+sbulist.size());
+    map<string,SBU_Product__c> sbumap=new map<string,SBU_Product__c>();
+    for(SBU_Product__c sbp:sbulist){
+        string key1=sbp.Target_OwnerId__c+':'+sbp.SBU__c+':'+sbp.Business_Type__c;
+        sbumap.put(key1, sbp);        
+    }  
+        
+    
+
+    list<SBU_Product__c> ipdata=new list<SBU_Product__c>();
+    for(Invoice_Products__c inp:involdlist){
+       
+        if(sbumap.containsKey(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c) ){
+            Integer month = inp.Invoice_Date__c.Month();
+            system.debug('month'+month);
+            If(month==1){
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==2){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==3){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==4){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==5){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==6){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==7){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==8){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==9){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==10){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==11){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==12){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c-inp.Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }           
+        }       
+    } 
+            //  update ipdata; 
+            map<id,SBU_Product__c> accmap = new map<id,SBU_Product__c>();
+
+//put all the values from the list to map. 
+accmap.putall(ipdata);
+if(accmap.size()>0){
+update accmap.values();
+}
+         }
+    
+    /*after Update*/
+    
+   if ( Trigger.IsAfter && Trigger.isupdate) {
+     for(Invoice_Products__c ip:invnewlist){
+        invids.add(ip.Invoice__c);  
+       // invprodids.add(ip.Id);
+    }   
+    list<Invoice__c> invlist=[SELECT Id, Name,OwnerId, CreatedDate, CreatedById, Invoice_Date__c, Business_Type__c FROM Invoice__c where Id=:invids];
+    for(Invoice__c iv:invlist){
+        ownerids.add(iv.ownerId);
+        invdate.add(iv.Invoice_Date__c);
+    }
+    system.debug('invlist'+invlist.size());
+    list<Target_Assignment__c> talist=[SELECT Target_Start_Date__c, Target_End_Date__c, January_Target__c, Id, OwnerId,
+                                       Name FROM Target_Assignment__c where OwnerId=:ownerids and 
+                                       Target_Start_Date__c<=:invdate and Target_End_Date__c >= :invdate];
+    system.debug('talist'+talist.size());
+    set<id> taids=new set<id>();
+    for(Target_Assignment__c tac:talist){
+        taids.add(tac.Id);  
+    }
+    list<SBU_Product__c> sbulist=[SELECT Id, Name, SBU__c, Business_Type__c, Target__c, Target_Assignment__c,Target_Assignment__r.ownerid,
+                                  January_Target__c, January_Actual__c, Actual__c, March_Target__c, February_Target__c,
+                                  April_Target__c, February_Actual__c, April_Actual__c, March_Actual__c, June_Target__c,
+                                  May_Target__c, May_Actual__c, June_Actual__c, July_Target__c, July_Actual__c, 
+                                  August_Target__c, August_Actual__c, September_Target__c, September_Actual__c, 
+                                  October_Target__c, October_Actual__c, November_Target__c, December_Actual__c,
+                                  December_Target__c, November_Actual__c, Pending__c,Target_Assignment__r.Target_Start_Date__c,
+                                  Target_Assignment__r.Target_End_Date__c,Target_OwnerId__c FROM SBU_Product__c where 
+                                  Target_Assignment__c=:taids];
+    system.debug('SBU_Product__c'+sbulist.size());
+    map<string,SBU_Product__c> sbumap=new map<string,SBU_Product__c>();
+    for(SBU_Product__c sbp:sbulist){
+        string key1=sbp.Target_OwnerId__c+':'+sbp.SBU__c+':'+sbp.Business_Type__c;
+        sbumap.put(key1, sbp);        
+    }  
+   // list<Invoice_Products__c> invplist=[SELECT Id, Name, Invoice__c,Invoice__r.ownerid,Invoice__r.Invoice_Date__c, Product__c,Business_Type__c,SBU__c,
+                                   //     Price__c FROM Invoice_Products__c where id=:invprodids];
+    
+  //  system.debug('invplist'+invplist);
+    list<SBU_Product__c> ipdata=new list<SBU_Product__c>();
+    for(Invoice_Products__c inp:invnewlist){
+        if(sbumap.containsKey(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c)){
+            Integer month = inp.Invoice_Date__c.Month();
+            system.debug('month'+month);
+            If(month==1){
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                system.debug('jan'+sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).January_Actual__c);
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==2){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).February_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==3){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).March_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==4){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).April_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==5){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).May_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==6){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).June_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==7){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).July_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==8){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).August_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==9){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).September_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==10){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).October_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==11){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).November_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }
+            else If(month==12){           
+                sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c=sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c).December_Actual__c+inp.Price__c-oldmapdata.get(inp.Id).Price__c;
+                ipdata.add(sbumap.get(inp.Invoice_Owner__c+':'+inp.SBU__c+':'+inp.Business_Type__c))   ;   
+            }           
+        }       
+    } 
+ 
+  //  update ipdata; 
+  map<id,SBU_Product__c> accmap = new map<id,SBU_Product__c>();
+
+//put all the values from the list to map. 
+accmap.putall(ipdata);
+if(accmap.size()>0){
+    
+update accmap.values();
+}  
+ 
+}
+   }
+    
+    
+    
+    
+    
+    /*when ever event is created need to create planned visit*/
+    
+    
+    public static void eventhandler(list<event>neweventlist){
+        
+        
+         set<Id> eids= new set<Id> ();
+    list<event> etlist=[select Id,StartDateTime,EndDateTime,Subject,Account__c,Others__c,Account__r.Name,Account__r.Geolocation__Latitude__s,
+                        Account__r.Geolocation__Longitude__s from Event where Id=:neweventlist];
+        system.debug('tyop'+etlist);
+    list<Planned_Visits__c> pvisits=new list<Planned_Visits__c>();
+    for(event e:etlist){       
+        eids.add(e.Id);
+        Planned_Visits__c pvt=new Planned_Visits__c();
+        pvt.Account__c=e.Account__c;
+        pvt.Account_Location__Latitude__s=e.Account__r.Geolocation__Latitude__s; 
+        pvt.Account_Location__Longitude__s=e.Account__r.Geolocation__Longitude__s;
+        pvt.CheckIn_Location__Latitude__s=0;
+        pvt.CheckIn_Location__Longitude__s=0;
+        pvt.Checkout_Location__Latitude__s=0;
+        pvt.Checkout_Location__Longitude__s=0;          
+        pvt.End__c=e.EndDateTime;
+        pvt.Start__c=e.StartDateTime;
+        pvt.EventId__c=e.Id;       
+        pvt.Others__c=e.Others__c;
+        pvt.Subject_Line__c=e.Subject;
+        if(e.Account__c!=null ){
+        pvt.Name=e.Subject+' With '+e.Account__r.Name;
+    }else{
+         pvt.Name=e.Subject+' With '+e.Others__c;
+    }
+        pvisits.add(pvt);        
+    }    
+    insert pvisits;
+        system.debug('pvisits'+pvisits);
+    system.debug('eids'+eids.size());
+    list<EventRelation> erlist=[SELECT EventId,RelationId FROM EventRelation where EventId=:eids];
+    //list<Planned_Visits__c> plv=[select id,EventId__c from Planned_Visits__c where EventId__c=:eids];
+  //  system.debug('plv'+plv.size());
+    system.debug('erlist'+erlist.size());
+    if(erlist.size()>0){
+        map<string,id> plvmap=new map<string,Id> ();
+        for(Planned_Visits__c p: pvisits){
+            plvmap.put(p.EventId__c, p.Id);
+        }
+        list<Visit_Members__c> vmlist=new list<Visit_Members__c>();
+        for(EventRelation er:erlist){        
+            if(plvmap.containsKey(er.EventId)){
+                Visit_Members__c vm=new Visit_Members__c();
+                vm.User__c=er.RelationId;
+                vm.Planned_Visits__c=plvmap.get(er.EventId);
+                vmlist.add(vm);
+            }
+        }
+        insert vmlist;
+    }
+        
+    }
+    
+ /*Trigger for Custom Notification to all users*/
+    
+    public static void customnotifyplvt(list<Planned_Visits__c>newplvtlist,map<Id,Planned_Visits__c>plvtoldmap){
+        set<Id> vmids=new set<Id>();
+     for(Planned_Visits__c pl :newplvtlist){
+          if(plvtoldmap.get(pl.id).Status__c =='Sent For Approval' &&( pl.Status__c == 'Approved' || pl.Status__c=='Rejected')){
+             vmids.add(pl.Id);
+        
+          } 
+     }
+    list<Visit_Members__c> vmlist=[select Id,User__c,Planned_Visits__c,Planned_Visits__r.Id,Planned_Visits__r.Name,Planned_Visits__r.Status__c from Visit_Members__c where Planned_Visits__c=:vmids];
+ 
+    
+    for(Visit_Members__c vmc:vmlist){
+          Messaging.CustomNotification notification = new Messaging.CustomNotification();
+notification.setBody(vmc.Planned_Visits__r.Name+ ' has been '+vmc.Planned_Visits__r.Status__c);
+notification.setTitle('Planned Visit Information');
+//notification.setSenderId(u.Id);
+CustomNotificationType type = [SELECT Id,DeveloperName FROM CustomNotificationType WHERE DeveloperName = 'Planned_Visit_Notify_For_All_Users'];
+notification.setNotificationTypeId(type.id);
+notification.setTargetId(vmc.Planned_Visits__c); // target object id
+        //Set<String> addressee = new Set<String>();
+//addressee.add(vmc.User__c);
+notification.send(new Set<String> { vmc.User__c });
+        
+    }
+    }
+    
+   /*trigger for Lead while converting*/
+    
+    
+    public static void leadconverting(list<Lead>allleaddata){
+     list<id>leadids=new list<id>();
+   //  list<id>allleadlist=new list<id>();
+    //list<id>accids=new list<id>();
+  //  Id devRecordTypeId = Schema.SObjectType.Lead.getRecordTypeInfosByName().get('B2B').getRecordTypeId();    
+    for(Lead record: allleaddata) {
+        // allleadlist.add(record.id); 
+       // if(record.Status == 'Qualified' && record.RecordTypeId==devRecordTypeId && record.IsConverted==true){
+        if(record.Status == 'Qualified' && record.IsConverted==true){
+            system.debug('lead'+record.id);
+            leadids.add(record.id);       
+         //   accids.add(record.ConvertedAccountId);           
+        }        
+    }
+    
+    list<Competitor__c>complist=[SELECT Competitor_Product_Name__c, Volume_Quantity_Per_Year__c, Total_Value_Per_Year__c,
+                                 Lead__c, Account__c,lead__r.ConvertedAccountId, Id, Name FROM Competitor__c where Lead__c=:leadids];
+    for(Competitor__c cp:complist){
+        cp.Account__c=cp.lead__r.ConvertedAccountId;       
+    }
+    update complist;
+    map<id,Distributor_Profile_Screening__c> dpsmap=new map<id,Distributor_Profile_Screening__c>();
+    list<Distributor_Profile_Screening__c> dps=[select id,Lead__c,lead__r.ConvertedAccountId, Income_Tax_P_A_No_Of_The_Firm__c,
+                                                Type_Of_Firm__c, Proprietor_Partner_Name__c, Partnership_Share__c, Qualification__c, Experience__c, Sales_Value1__c,
+                                                IT_PAN_No__c, Sales_Value2__c, Sales_Value3__c, Total_Funds_Employed__c, Source_Of_Fund_Own_Equity__c,
+                                                Source_Of_Fund_Borrowings__c, Credit_Facility__c, Bank_Name__c, Centeral_Sales_Tax_Registration_No__c, 
+                                                Centeral_Sales_Tax_Registration_Date__c, Local_Sales_Tax_Registration_Date__c, Local_Sales_Tax_Registration_No__c,
+                                                X15Digit_Central_Excise_Registration_Dat__c, X15_Digit_Central_Excise_Registration_N__c, Sub_Dealers_Locations__c,
+                                                Sub_Dealers_No__c, No_Of_Employees_In_Service__c, No_Of_Employees_In_Sales__c, Status__c, No_Of_Employees_In_Others_Specify__c,
+                                                Sales_Year2__c, Required_Document__c, Rejecting_Not_Renewed_Description__c
+                                                , Potential_Analysis__c, Sales_Year1__c,Account__c, Sales_Year3__c,Specify_Conveyance__c FROM Distributor_Profile_Screening__c where Lead__c=:leadids ];
+    for(Distributor_Profile_Screening__c dp:dps){
+        dp.Account__c=dp.lead__r.ConvertedAccountId;
+        
+    }
+        update dps;
+   /*attachment */
+      
+  /*  list<account> acs=[select id,X15_Digit_Central_Excise_Registration_N__c,X15Digit_Central_Excise_Registration_Dat__c,Centeral_Sales_Tax_Registration_Date__c,
+                       Centeral_Sales_Tax_Registration_No__c,Credit_Facility__c,Experience__c,Income_Tax_P_A_No_Of_The_Firm__c,
+                       IT_PAN_No__c,Local_Sales_Tax_Registration_No__c,Local_Sales_Tax_Registration_Date__c,
+                       No_Of_Employees_In_Others_Specify__c,No_Of_Employees_In_Sales__c,No_Of_Employees_In_Service__c,
+                       Partnership_Share__c,Potential_Analysis__c,Proprietor_Partner_Name__c,Qualification__c,
+                       Rejecting_Not_Renewed_Description__c,Required_Document__c,Sales_Value1__c,Sales_Value2__c,Sales_Value3__c,
+                       Sales_Year1__c,Sales_Year2__c,Sales_Year3__c,Source_Of_Fund_Borrowings__c,Source_Of_Fund_Own_Equity__c,
+                       Specify_Conveyance__c,Sub_Dealers_Locations__c,Sub_Dealers_No__c,Total_Funds_Employed__c,
+                       Type_Of_Firm__c from account where id=:accids];
+    for(Account f:acs){
+        if(dpsmap.containsKey(f.id)){
+            f.X15_Digit_Central_Excise_Registration_N__c=dpsmap.get(f.id).X15_Digit_Central_Excise_Registration_N__c;
+            f.X15Digit_Central_Excise_Registration_Dat__c=dpsmap.get(f.id).X15Digit_Central_Excise_Registration_Dat__c;
+            f.Bank_Name__c=dpsmap.get(f.id).Bank_Name__c;
+            f.Centeral_Sales_Tax_Registration_No__c=dpsmap.get(f.id).Centeral_Sales_Tax_Registration_No__c;
+            f.Centeral_Sales_Tax_Registration_Date__c=dpsmap.get(f.id).Centeral_Sales_Tax_Registration_Date__c;
+            f.Credit_Facility__c=dpsmap.get(f.id).Credit_Facility__c;
+            f.Experience__c=dpsmap.get(f.id).Experience__c;
+            f.Income_Tax_P_A_No_Of_The_Firm__c=dpsmap.get(f.id).Income_Tax_P_A_No_Of_The_Firm__c;
+            f.IT_PAN_No__c=dpsmap.get(f.id).IT_PAN_No__c;
+            f.Local_Sales_Tax_Registration_No__c=dpsmap.get(f.id).Local_Sales_Tax_Registration_No__c;
+            f.Local_Sales_Tax_Registration_Date__c =dpsmap.get(f.id).Local_Sales_Tax_Registration_Date__c;
+            f.No_Of_Employees_In_Others_Specify__c =dpsmap.get(f.id).No_Of_Employees_In_Others_Specify__c;
+            f.No_Of_Employees_In_Sales__c =dpsmap.get(f.id).No_Of_Employees_In_Sales__c;
+            f.No_Of_Employees_In_Service__c =dpsmap.get(f.id).No_Of_Employees_In_Service__c;
+            f.Partnership_Share__c =dpsmap.get(f.id).Partnership_Share__c;
+            f.Potential_Analysis__c =dpsmap.get(f.id).Potential_Analysis__c;
+            f.Proprietor_Partner_Name__c =dpsmap.get(f.id).Proprietor_Partner_Name__c;
+            f.Qualification__c =dpsmap.get(f.id).Qualification__c;
+            f.Rejecting_Not_Renewed_Description__c =dpsmap.get(f.id).Rejecting_Not_Renewed_Description__c;
+            f.Required_Document__c	 =dpsmap.get(f.id).Required_Document__c	;
+            f.Sales_Value1__c =dpsmap.get(f.id).Sales_Value1__c;
+            f.Sales_Value2__c =dpsmap.get(f.id).Sales_Value2__c;
+            f.Sales_Value3__c =dpsmap.get(f.id).Sales_Value3__c;
+            f.Sales_Year1__c =dpsmap.get(f.id).Sales_Year1__c;
+            f.Sales_Year2__c =dpsmap.get(f.id).Sales_Year2__c;
+            f.Sales_Year3__c =dpsmap.get(f.id).Sales_Year3__c;
+            f.Source_Of_Fund_Borrowings__c=dpsmap.get(f.id).Source_Of_Fund_Borrowings__c;
+            f.Source_Of_Fund_Own_Equity__c=dpsmap.get(f.id).Source_Of_Fund_Own_Equity__c;
+            f.Specify_Conveyance__c=dpsmap.get(f.id).Specify_Conveyance__c;
+            f.Sub_Dealers_Locations__c=dpsmap.get(f.id).Sub_Dealers_Locations__c;
+            f.Sub_Dealers_No__c=dpsmap.get(f.id).Sub_Dealers_No__c;
+            f.Total_Funds_Employed__c=dpsmap.get(f.id).Total_Funds_Employed__c;
+            f.Type_Of_Firm__c=dpsmap.get(f.id).Type_Of_Firm__c;
+            
+        }
+    }
+    update acs;*/
+    }
+}
