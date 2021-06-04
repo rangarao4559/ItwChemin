@@ -1,0 +1,1 @@
+(Loan_Amount__c * ( Intrest_Rate__c / 12) * ((1+(Intrest_Rate__c / 12)) ^ EMI_Opted_In_Months__c )) / (((1+(Intrest_Rate__c / 12)) ^ EMI_Opted_In_Months__c )-1)
